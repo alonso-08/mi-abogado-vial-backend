@@ -12,7 +12,7 @@ poetry install
 poetry shell
 
 # Ejecutar servidor
-poetry run uvicorn app.main:app --reload
+poetry run uvicorn main:app --reload
 ```
 
 ## Variables de entorno
