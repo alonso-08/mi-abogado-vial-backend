@@ -119,8 +119,6 @@ def get_qa_chain(official_type: str, state: str, municipality: Optional[str] = N
         history_messages_key="chat_history",
     )
 
-
-
 def get_available_states() -> List[str]:
     try:
         from app.database import SessionLocal

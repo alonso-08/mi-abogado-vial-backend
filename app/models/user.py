@@ -59,3 +59,15 @@ class Payment(Base):
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
     user = relationship("User", back_populates="payments")
+
+
+class CreditPackage(Base):
+    __tablename__ = "credit_packages"
+
+    id = Column(String(50), primary_key=True)  # e.g., 'basico', 'estandar', 'pro'
+    name = Column(String(100), nullable=False)
+    credits = Column(Integer, nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    price_per_credit = Column(Numeric(10, 2), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)

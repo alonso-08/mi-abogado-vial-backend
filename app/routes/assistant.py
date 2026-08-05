@@ -1,10 +1,14 @@
+import os
 import re
 import time
 import json
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
+import uuid
+import logging
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models.user import User
 from app.schemas.assistant import ConsultationRequest, ConsultationResponse, get_available_states
 from app.services.auth import get_current_user
@@ -12,6 +16,8 @@ from app.services.credits import deduct_credit
 from app.services import rag
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/estados")
@@ -33,6 +39,55 @@ def get_estados(current_user: User = Depends(get_current_user)):
     
     all_available = list(set(rag_states + db_state_ids))
     return get_available_states(all_available)
+
+
+def get_active_municipalities(db: Session, state: str) -> list:
+    from sqlalchemy import select
+    from app.models.document import Document
+    from app.models.document_municipality import DocumentMunicipality
+
+    active_docs = select(Document.id).where(
+        Document.state == state,
+        Document.status == "active",
+    )
+    rows = (
+        db.query(DocumentMunicipality.municipality)
+        .filter(DocumentMunicipality.document_id.in_(active_docs))
+        .distinct()
+        .all()
+    )
+    return sorted(m[0] for m in rows)
+
+
+@router.get("/municipios")
+def get_municipios(
+    state: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Municipios con documentos activos para un estado, con centroides GPS si existen."""
+    munis = get_active_municipalities(db, state)
+
+    try:
+        centroids_path = os.path.join(
+            os.path.dirname(__file__), "..", "data", "municipality_centroids.json"
+        )
+        with open(centroids_path, "r") as f:
+            centroids = json.load(f)
+    except Exception as e:
+        logger.warning(f"Error cargando centroides de municipios: {e}")
+        centroids = {}
+
+    state_centroids = centroids.get(state, {})
+    result = [
+        {
+            "name": m,
+            "lat": state_centroids.get(m, [None, None])[0],
+            "lng": state_centroids.get(m, [None, None])[1],
+        }
+        for m in munis
+    ]
+    return result
 
 
 @router.get("/health")
@@ -67,10 +122,10 @@ def consultar(
             detail="La consulta debe tener al menos 10 caracteres",
         )
 
-    if len(request.text) > 500:
+    if len(request.text) > 2500:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La consulta no puede exceder 500 caracteres",
+            detail="La consulta no puede exceder 2500 caracteres",
         )
 
     if request.official_type not in ["transito", "preventivo"]:
@@ -162,10 +217,10 @@ async def consultar_stream(
             detail="La consulta debe tener al menos 10 caracteres",
         )
 
-    if len(request.text) > 500:
+    if len(request.text) > 2500:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La consulta no puede exceder 500 caracteres",
+            detail="La consulta no puede exceder 2500 caracteres",
         )
 
     if request.official_type not in ["transito", "preventivo"]:
@@ -244,3 +299,6 @@ async def consultar_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+

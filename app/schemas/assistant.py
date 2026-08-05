@@ -18,6 +18,12 @@ class ConsultationResponse(BaseModel):
     credits_remaining: int
 
 
+class AppealRequest(BaseModel):
+    situation: str
+    state: str = "jalisco"
+    municipality: Optional[str] = None
+
+
 class StateInfo(BaseModel):
     id: str
     name: str

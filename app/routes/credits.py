@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.user import User, CreditTransaction, Payment
+from app.models.user import User, CreditTransaction, Payment, CreditPackage
 from app.schemas.credits import (
     CreditBalance,
     CreditHistory,
     CreditTransactionResponse,
     PaymentCreate,
     PaymentResponse,
-    AVAILABLE_PACKAGES,
+    PackageInfo,
 )
 from app.services.auth import get_current_user
 
@@ -38,6 +38,12 @@ def get_history(
     )
 
 
-@router.get("/packages")
-def get_packages():
-    return AVAILABLE_PACKAGES
+@router.get("/packages", response_model=list[PackageInfo])
+def get_packages(db: Session = Depends(get_db)):
+    packages = (
+        db.query(CreditPackage)
+        .filter(CreditPackage.is_active == True)
+        .order_by(CreditPackage.price.asc())
+        .all()
+    )
+    return packages
