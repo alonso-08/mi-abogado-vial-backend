@@ -5,6 +5,11 @@ description = "Asistente Legal Vial Mexico - Backend API"
 authors = ["Luis Alonso"]
 readme = "README.md"
 
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "^0.110.0"
@@ -20,6 +25,7 @@ langchain-community = ">=0.2.0"
 langchain-google-genai = ">=1.0.0"
 langchain-huggingface = ">=0.1.0"
 sentence-transformers = ">=2.0.0"
+torch = {version = ">=1.11.0", source = "pytorch-cpu"}
 pypdf = "^4.0.0"
 mercadopago = "^3.4.0"
 resend = ">=2.0.0"
