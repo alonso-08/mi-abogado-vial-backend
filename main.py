@@ -1,3 +1,4 @@
+import os
 import subprocess
 from datetime import datetime
 
@@ -44,6 +45,7 @@ async def startup_event():
                 capture_output=True,
                 text=True,
                 check=True,
+                env={**os.environ},
             )
             print("✅ Migraciones ejecutadas exitosamente")
             if result.stdout:
