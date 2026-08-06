@@ -84,6 +84,12 @@ class Settings(BaseSettings):
         ...,
         description="URL del frontend",
     )
+    
+    # Docs
+    DOCS_ENABLED: bool = Field(
+        True,
+        description="Habilitar documentación Swagger en /docs",
+    )
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":

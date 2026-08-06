@@ -15,6 +15,8 @@ app = FastAPI(
     title="Asistente Legal Vial API",
     description="API para asistencia legal vial en Mexico",
     version="0.1.0",
+    docs_url="/docs" if settings.DOCS_ENABLED else None,
+    redoc_url="/redoc" if settings.DOCS_ENABLED else None,
 )
 
 app.add_middleware(
@@ -60,14 +62,19 @@ async def startup_event():
     now = datetime.now()
     print("🚀 Asistente Legal Vial API iniciada correctamente")
     print(f"🕰️ Fecha y hora actual: {now.strftime('%Y-%m-%d %H:%M:%S')}")
-    print("📚 Documentación disponible en: http://localhost:8000/docs")
+    if settings.DOCS_ENABLED:
+        print("📚 Documentación disponible en: http://localhost:8000/docs")
+    else:
+        print("📚 Documentación deshabilitada (DOCS_ENABLED=False)")
 
     init_all_states()
 
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/docs")
+    if settings.DOCS_ENABLED:
+        return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/health")
 
 
 @app.get("/health")
