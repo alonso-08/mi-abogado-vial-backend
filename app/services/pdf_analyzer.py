@@ -124,7 +124,7 @@ def analyze_pdf(pdf_content: bytes, filename: str, state: str = None) -> dict:
         if uploaded_file.state != "ACTIVE":
             raise Exception(f"Gemini file not active after timeout: {uploaded_file.state}")
 
-        model_name = "gemini-2.5-flash-lite" if settings.ENVIRONMENT in ["development", "local"] else "gemini-2.5-flash"
+        model_name = "gemini-2.5-flash-lite" if settings.ENVIRONMENT in ["DEV", "LOCAL"] else "gemini-2.5-flash"
 
         response = client.models.generate_content(
             model=model_name,

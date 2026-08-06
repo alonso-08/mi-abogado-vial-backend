@@ -91,6 +91,12 @@ class Settings(BaseSettings):
         description="Habilitar documentación Swagger en /docs",
     )
 
+    # TTS Voice (Edge TTS - Microsoft)
+    TTS_VOICE: str = Field(
+        "es-MX-JorgeNeural",
+        description="Voz de Edge TTS. Voces MX: es-MX-JorgeNeural (hombre), es-MX-DaliaNeural (mujer)",
+    )
+
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         default_jwt = "tu-secreto-super-seguro-cambiar-en-produccion"

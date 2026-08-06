@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.config import get_settings
-from app.routes import auth_router, credits_router, payments_router, assistant_router, admin_router, document_types_router
+from app.routes import auth_router, credits_router, payments_router, assistant_router, admin_router, document_types_router, tts_router
 from app.services.rag import init_all_states
 
 
@@ -45,6 +45,7 @@ app.include_router(payments_router)
 app.include_router(assistant_router)
 app.include_router(admin_router)
 app.include_router(document_types_router)
+app.include_router(tts_router)
 
 
 @app.on_event("startup")
