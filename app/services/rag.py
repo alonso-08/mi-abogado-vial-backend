@@ -12,6 +12,7 @@ from app.config import get_settings
 from app.prompts import get_prompt
 from app.database import SessionLocal
 from app.services.embeddings import search_similar
+from langchain_core.runnables import RunnableLambda
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -73,7 +74,7 @@ def get_qa_chain(official_type: str, state: str, municipality: Optional[str] = N
 
     chain = (
         {
-            "context": itemgetter("question") | retrieve_docs,
+            "context": retrieve_docs,
             "question": itemgetter("question"),
             "chat_history": itemgetter("chat_history")
         }
