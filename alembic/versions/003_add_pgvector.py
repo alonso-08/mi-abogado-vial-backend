@@ -39,13 +39,17 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
 
-    # Create HNSW index for cosine similarity search
-    op.execute(
-        "CREATE INDEX idx_embedding_hnsw ON document_embeddings "
-        "USING hnsw (embedding vector_cosine_ops) WITH (lists = 100)"
-    )
+    op.execute("""
+        CREATE INDEX idx_embedding_hnsw
+        ON document_embeddings
+        USING hnsw (embedding vector_cosine_ops)
+        WITH (
+            m = 16,
+            ef_construction = 64
+        )
+        """)
 
-    # Create index for document_id lookups
+    # Índice B-tree para búsquedas por documento
     op.create_index(
         "idx_embedding_document_id",
         "document_embeddings",
