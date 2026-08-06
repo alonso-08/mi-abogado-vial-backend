@@ -21,6 +21,7 @@ from app.schemas.assistant import (
     ConsultationResponse,
     StateInfo,
     STATE_NAMES,
+    STATE_CENTROIDS,
     get_available_states,
 )
 
@@ -41,5 +42,6 @@ __all__ = [
     "ConsultationResponse",
     "StateInfo",
     "STATE_NAMES",
+    "STATE_CENTROIDS",
     "get_available_states",
 ]
