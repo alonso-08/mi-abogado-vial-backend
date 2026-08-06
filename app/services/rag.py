@@ -22,7 +22,7 @@ vector_store: Optional[Chroma] = None
 session_store: dict[str, tuple[ChatMessageHistory, float]] = {}
 
 SESSION_TTL_SECONDS = 3600
-CHROMA_DB_DIR = "chroma_db"
+CHROMA_DB_DIR = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "chroma_db")
 
 def _cleanup_expired_sessions() -> None:
     now = time.time()

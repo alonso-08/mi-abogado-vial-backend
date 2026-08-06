@@ -12,6 +12,8 @@ from app.schemas.auth import (
     UserUpdate,
     EmailVerification,
     ResendVerificationRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
     MessageResponse,
 )
 from app.services.auth import (
@@ -192,6 +194,77 @@ async def resend_verification(
     )
 
     return MessageResponse(message="Correo de verificacion reenviado.")
+
+
+RESET_TOKEN_EXPIRE_HOURS = 1
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    rate_limit_check(resend_limiter, f"forgot:{client_ip}")
+
+    user = db.query(User).filter(User.email == data.email).first()
+
+    # Siempre devolver success para no revelar si el email existe
+    if user:
+        reset_token = generate_verification_token()
+        user.reset_token = reset_token
+        user.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
+        db.commit()
+
+        await email_service.send_reset_password_email(
+            to_email=user.email,
+            full_name=user.full_name or user.email,
+            reset_token=reset_token,
+        )
+
+    return MessageResponse(
+        message="Si el email existe, recibirás instrucciones para recuperar tu contraseña."
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.reset_token == data.token).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token invalido o expirado",
+        )
+
+    if user.reset_token_expires is None:
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token expirado. Solicita uno nuevo.",
+        )
+
+    expires = user.reset_token_expires
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires < datetime.now(timezone.utc):
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token expirado. Solicita uno nuevo.",
+        )
+
+    user.hashed_password = get_password_hash(data.password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+
+    return MessageResponse(message="Contraseña actualizada correctamente. Ya puedes iniciar sesión.")
 
 
 @router.get("/me", response_model=UserResponse)

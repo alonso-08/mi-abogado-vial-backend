@@ -73,6 +73,22 @@ class EmailService:
             html_content=html_content,
         )
 
+    async def send_reset_password_email(
+        self, to_email: str, full_name: str, reset_token: str
+    ) -> Dict[str, Any]:
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+
+        html_content = self._generate_reset_password_email_html(
+            full_name=full_name or to_email,
+            reset_url=reset_url,
+        )
+
+        return await self.send_email(
+            to_email=to_email,
+            subject="Recupera tu contraseña - Asistente Legal Vial",
+            html_content=html_content,
+        )
+
     def _generate_verification_email_html(self, full_name: str, verification_url: str) -> str:
         return f"""
         <!DOCTYPE html>
@@ -169,6 +185,100 @@ class EmailService:
             <div class="footer">
                 <p><strong>Asistente Legal Vial</strong> - Conoce tus derechos</p>
                 <p>Este email fue enviado porque creaste una cuenta en nuestra plataforma.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+    def _generate_reset_password_email_html(self, full_name: str, reset_url: str) -> str:
+        return f"""
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Recupera tu contraseña</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px 8px 0 0;
+                }}
+                .content {{
+                    background: #ffffff;
+                    padding: 30px;
+                    border: 1px solid #e1e1e1;
+                }}
+                .button {{
+                    display: inline-block;
+                    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                    color: white !important;
+                    text-decoration: none;
+                    padding: 15px 30px;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    background: #f8f9fa;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #666666;
+                    border-radius: 0 0 8px 8px;
+                    border: 1px solid #e1e1e1;
+                    border-top: none;
+                }}
+                .logo {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">⚖️ Asistente Legal Vial</div>
+                <h1>Recupera tu contraseña</h1>
+            </div>
+
+            <div class="content">
+                <h2>Hola {full_name},</h2>
+
+                <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>Asistente Legal Vial</strong>.</p>
+
+                <p>Haz clic en el botón de abajo para crear una nueva contraseña:</p>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{reset_url}" class="button">
+                        Restablecer contraseña
+                    </a>
+                </div>
+
+                <p>Si no solicitaste este cambio, puedes ignorar este email de forma segura. Tu contraseña actual seguirá vigente.</p>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #e1e1e1;">
+
+                <p><small>
+                    <strong>Nota:</strong> Este enlace expirará en 1 hora por seguridad.
+                    Si no puedes hacer clic en el botón, copia y pega esta URL en tu navegador:
+                </small></p>
+                <p><small style="color: #666; word-break: break-all;">{reset_url}</small></p>
+            </div>
+
+            <div class="footer">
+                <p><strong>Asistente Legal Vial</strong> - Conoce tus derechos</p>
+                <p>Este email fue enviado porque se solicitó un restablecimiento de contraseña en tu cuenta.</p>
             </div>
         </body>
         </html>
