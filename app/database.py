@@ -1,6 +1,9 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.config import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -10,8 +13,16 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @event.listens_for(engine, "connect")
 def register_pgvector(dbapi_connection, connection_record):
-    from pgvector.psycopg2 import register_vector
-    register_vector(dbapi_connection)
+    try:
+        from pgvector.psycopg2 import register_vector
+        cursor = dbapi_connection.cursor()
+        cursor.execute("SELECT 1 FROM pg_available_extensions WHERE name = 'vector'")
+        if cursor.fetchone():
+            register_vector(dbapi_connection)
+        else:
+            logger.warning("pgvector extension not available yet, skipping registration")
+    except Exception as e:
+        logger.warning(f"Could not register pgvector: {e}")
 
 
 class Base(DeclarativeBase):
