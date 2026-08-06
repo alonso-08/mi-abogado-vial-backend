@@ -1,13 +1,23 @@
 import os
 import subprocess
 from datetime import datetime
+from starlette.middleware.base import BaseHTTPMiddleware
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.config import get_settings
 from app.routes import auth_router, credits_router, payments_router, assistant_router, admin_router, document_types_router
 from app.services.rag import init_all_states
+
+
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        return response
+
 
 settings = get_settings()
 
@@ -26,6 +36,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(NoCacheMiddleware)
 
 app.include_router(auth_router)
 app.include_router(credits_router)
