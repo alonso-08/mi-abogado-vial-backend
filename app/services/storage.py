@@ -2,7 +2,7 @@
 Storage abstraction layer for Railway Buckets (S3) with local filesystem fallback.
 
 Railway Buckets provide S3-compatible storage with credentials:
-- AWS_S3_BUCKET_NAME: The bucket name
+- S3_BUCKET_NAME: The bucket name
 - AWS_ACCESS_KEY_ID: S3 access key
 - AWS_SECRET_ACCESS_KEY: S3 secret key
 - AWS_ENDPOINT_URL: S3 API endpoint (e.g., https://storage.railway.app)
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # --- S3 Configuration ---
 USE_S3 = all([
-    os.environ.get("AWS_S3_BUCKET_NAME"),
+    os.environ.get("S3_BUCKET_NAME"),
     os.environ.get("AWS_ACCESS_KEY_ID"),
     os.environ.get("AWS_SECRET_ACCESS_KEY"),
     os.environ.get("AWS_ENDPOINT_URL"),
@@ -149,7 +149,7 @@ def _upload_to_s3(file_content: bytes, state: str, filename: str,
     """Upload file to Railway Bucket."""
     s3 = get_s3_client()
     key = get_s3_key(state, filename, municipality)
-    bucket = os.environ["AWS_S3_BUCKET_NAME"]
+    bucket = os.environ["S3_BUCKET_NAME"]
 
     s3.put_object(
         Bucket=bucket,
@@ -165,7 +165,7 @@ def _upload_to_s3(file_content: bytes, state: str, filename: str,
 def _download_from_s3(key: str) -> bytes:
     """Download file from Railway Bucket."""
     s3 = get_s3_client()
-    bucket = os.environ["AWS_S3_BUCKET_NAME"]
+    bucket = os.environ["S3_BUCKET_NAME"]
 
     response = s3.get_object(Bucket=bucket, Key=key)
     return response["Body"].read()
@@ -175,7 +175,7 @@ def _delete_from_s3(key: str) -> bool:
     """Delete file from Railway Bucket."""
     try:
         s3 = get_s3_client()
-        bucket = os.environ["AWS_S3_BUCKET_NAME"]
+        bucket = os.environ["S3_BUCKET_NAME"]
         s3.delete_object(Bucket=bucket, Key=key)
         logger.info(f"Deleted from S3: s3://{bucket}/{key}")
         return True
