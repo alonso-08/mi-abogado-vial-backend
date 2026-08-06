@@ -5,7 +5,6 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from app.models.document import Document
 from app.config import get_settings
@@ -14,14 +13,12 @@ from app.services.storage import (
     delete_file,
     get_temp_file_for_processing,
     cleanup_temp_file,
-    get_local_path,
     USE_S3,
 )
+from app.services.embeddings import store_embeddings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
-CHROMA_DB_DIR = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "chroma_db")
 
 _embeddings_instance = None
 
@@ -47,7 +44,7 @@ def save_uploaded_file(file_content: bytes, filename: str, state: str,
 def process_pdf(document_id: UUID, file_path: str, state: str,
                 municipality: Optional[str], db: Session) -> bool:
     """
-    Process PDF: extract text, split into chunks, store in ChromaDB.
+    Process PDF: extract text, split into chunks, store embeddings in PostgreSQL.
 
     Args:
         file_path: S3 key or local file path
@@ -73,25 +70,25 @@ def process_pdf(document_id: UUID, file_path: str, state: str,
         docs = text_splitter.split_documents(documents)
         logger.info(f"Document split into {len(docs)} chunks.")
 
-        embeddings = _get_embeddings()
-
-        # Inject metadata for ChromaDB filtering
+        # Inject metadata for filtering
         for doc in docs:
             doc.metadata["state"] = state
             doc.metadata["municipality"] = municipality if municipality else "general"
 
-        logger.info(f"Saving chunks to ChromaDB...")
-        vector_store = Chroma(
-            collection_name="legal_documents",
-            embedding_function=embeddings,
-            persist_directory=CHROMA_DB_DIR
-        )
-        vector_store.add_documents(docs)
-        logger.info(f"Chunks saved successfully to ChromaDB.")
+        # Generate embeddings
+        embeddings_model = _get_embeddings()
+        texts = [doc.page_content for doc in docs]
+        embeddings = embeddings_model.embed_documents(texts)
+        logger.info(f"Generated {len(embeddings)} embeddings.")
 
+        # Store embeddings in PostgreSQL
+        store_embeddings(db, document_id, docs, embeddings)
+        logger.info(f"Embeddings stored in PostgreSQL for document {document_id}.")
+
+        # Update document record
         document = db.query(Document).filter(Document.id == document_id).first()
         if document:
-            document.index_path = CHROMA_DB_DIR
+            document.index_path = "pgvector"
             document.status = "active"
             db.commit()
 

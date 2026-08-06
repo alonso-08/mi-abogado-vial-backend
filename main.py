@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.config import get_settings
 from app.routes import auth_router, credits_router, payments_router, assistant_router, admin_router, document_types_router, tts_router
-from app.services.rag import init_all_states
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -79,8 +78,6 @@ async def startup_event():
         print("📚 Documentación disponible en: http://localhost:8000/docs")
     else:
         print("📚 Documentación deshabilitada (DOCS_ENABLED=False)")
-
-    init_all_states()
 
 
 @app.get("/")
