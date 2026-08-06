@@ -2,11 +2,11 @@
 Storage abstraction layer for Railway Buckets (S3) with local filesystem fallback.
 
 Railway Buckets provide S3-compatible storage with credentials:
-- BUCKET: The bucket name
-- ACCESS_KEY_ID: S3 access key
-- SECRET_ACCESS_KEY: S3 secret key
-- ENDPOINT: S3 API endpoint (e.g., https://storage.railway.app)
-- REGION: Region (typically "auto")
+- AWS_S3_BUCKET_NAME: The bucket name
+- AWS_ACCESS_KEY_ID: S3 access key
+- AWS_SECRET_ACCESS_KEY: S3 secret key
+- AWS_ENDPOINT_URL: S3 API endpoint (e.g., https://storage.railway.app)
+- AWS_DEFAULT_REGION: Region (typically "auto")
 
 In development (no credentials), files are stored locally in ./uploads/documents
 """
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 # --- S3 Configuration ---
 USE_S3 = all([
-    os.environ.get("BUCKET"),
-    os.environ.get("ACCESS_KEY_ID"),
-    os.environ.get("SECRET_ACCESS_KEY"),
-    os.environ.get("ENDPOINT"),
+    os.environ.get("AWS_S3_BUCKET_NAME"),
+    os.environ.get("AWS_ACCESS_KEY_ID"),
+    os.environ.get("AWS_SECRET_ACCESS_KEY"),
+    os.environ.get("AWS_ENDPOINT_URL"),
 ])
 
 # Local fallback directory
@@ -40,10 +40,10 @@ def get_s3_client():
 
     return boto3.client(
         "s3",
-        endpoint_url=os.environ["ENDPOINT"],
-        aws_access_key_id=os.environ["ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["SECRET_ACCESS_KEY"],
-        region_name=os.environ.get("REGION", "auto"),
+        endpoint_url=os.environ["AWS_ENDPOINT_URL"],
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+        region_name=os.environ.get("AWS_DEFAULT_REGION", "auto"),
         config=Config(
             signature_version="s3v4",
             s3={"addressing_style": "virtual"},
@@ -149,7 +149,7 @@ def _upload_to_s3(file_content: bytes, state: str, filename: str,
     """Upload file to Railway Bucket."""
     s3 = get_s3_client()
     key = get_s3_key(state, filename, municipality)
-    bucket = os.environ["BUCKET"]
+    bucket = os.environ["AWS_S3_BUCKET_NAME"]
 
     s3.put_object(
         Bucket=bucket,
@@ -165,7 +165,7 @@ def _upload_to_s3(file_content: bytes, state: str, filename: str,
 def _download_from_s3(key: str) -> bytes:
     """Download file from Railway Bucket."""
     s3 = get_s3_client()
-    bucket = os.environ["BUCKET"]
+    bucket = os.environ["AWS_S3_BUCKET_NAME"]
 
     response = s3.get_object(Bucket=bucket, Key=key)
     return response["Body"].read()
@@ -175,7 +175,7 @@ def _delete_from_s3(key: str) -> bool:
     """Delete file from Railway Bucket."""
     try:
         s3 = get_s3_client()
-        bucket = os.environ["BUCKET"]
+        bucket = os.environ["AWS_S3_BUCKET_NAME"]
         s3.delete_object(Bucket=bucket, Key=key)
         logger.info(f"Deleted from S3: s3://{bucket}/{key}")
         return True
