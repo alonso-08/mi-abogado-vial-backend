@@ -32,22 +32,3 @@ class Document(Base):
     municipalities = relationship(
         "DocumentMunicipality", back_populates="document", cascade="all, delete-orphan"
     )
-
-
-class DocumentSuggestion(Base):
-    __tablename__ = "document_suggestions"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    title = Column(String(255), nullable=False)
-    state = Column(String(50), nullable=False)
-    source_url = Column(String(500), nullable=True)
-    file_path = Column(String(500), nullable=True)
-    notes = Column(Text, nullable=True)
-    status = Column(String(20), default="pending")  # pending, approved, rejected
-    reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=_utcnow)
-    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
-
-    user = relationship("User", foreign_keys=[user_id])
-    reviewer = relationship("User", foreign_keys=[reviewed_by])

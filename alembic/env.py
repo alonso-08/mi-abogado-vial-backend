@@ -17,7 +17,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.models.user import User, CreditTransaction, Payment
-from app.models.document import Document, DocumentSuggestion
+from app.models.document import Document
 from app.models.document_type import DocumentType
 from app.models.document_municipality import DocumentMunicipality
 from app.models.embedding import DocumentEmbedding
